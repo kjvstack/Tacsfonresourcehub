@@ -1,0 +1,92 @@
+// Load uploads dynamically
+async function loadUploads() {
+    const list = document.getElementById('uploadList');
+    try {
+        const res = await fetch('/api/uploads');
+        if (!res.ok) throw new Error('Failed to fetch uploads');
+        const items = await res.json();
+        if (!items.length) {
+            list.innerHTML = '<p style="color:#666">No uploads yet. Check back soon!</p>';
+            return;
+        }
+        list.innerHTML = '';
+        items.forEach(it => {
+            const div = document.createElement('div');
+            div.className = 'upload-item';
+            const date = new Date(it.uploadedAt).toLocaleDateString('en-US', { 
+                month: 'short', 
+                day: 'numeric', 
+                year: 'numeric' 
+            });
+            div.innerHTML = `
+                <div>
+                    <h3>${escapeHtml(it.originalName)}</h3>
+                    <small>Uploaded ${date}</small>
+                </div>
+                <a href="/files/${encodeURIComponent(it.filename)}" class="download-btn">Download</a>
+            `;
+            list.appendChild(div);
+        });
+    } catch (err) {
+        list.innerHTML = '<p style="color:red">Error loading uploads</p>';
+        console.error(err);
+    }
+}
+
+// Handle resource request form
+document.addEventListener('DOMContentLoaded', () => {
+    loadUploads();
+
+    const menuToggle = document.querySelector('.menu-toggle');
+    const mainNav = document.querySelector('.main-nav');
+    if (menuToggle && mainNav) {
+        menuToggle.addEventListener('click', () => {
+            mainNav.classList.toggle('open');
+        });
+    }
+
+    const form = document.getElementById('requestForm');
+    if (form) {
+        form.addEventListener('submit', async (e) => {
+            e.preventDefault();
+            
+            const statusDiv = document.getElementById('requestStatus');
+            statusDiv.innerHTML = '<p style="color:#00733e">Submitting your request...</p>';
+            
+            const formData = new FormData(form);
+            try {
+                const res = await fetch('/api/request-resource', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({
+                        resourceName: formData.get('resourceName'),
+                        category: formData.get('category'),
+                        description: formData.get('description')
+                    })
+                });
+
+                if (!res.ok) throw new Error('Failed to submit request');
+                
+                statusDiv.innerHTML = '<p style="color:#00733e"><strong>✅ Request submitted successfully!</strong> Our admins will review your request shortly.</p>';
+                form.reset();
+                setTimeout(() => {
+                    statusDiv.innerHTML = '';
+                }, 5000);
+            } catch (err) {
+                statusDiv.innerHTML = '<p style="color:red"><strong>Error:</strong> Failed to submit request. Please try again.</p>';
+                console.error(err);
+            }
+        });
+    }
+});
+
+function escapeHtml(s) {
+    return String(s)
+        .replace(/&/g, '&amp;')
+        .replace(/</g, '&lt;')
+        .replace(/>/g, '&gt;')
+        .replace(/"/g, '&quot;')
+        .replace(/'/g, '&#39;');
+}

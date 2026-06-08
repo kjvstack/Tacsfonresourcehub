@@ -1,0 +1,43 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Resource Requests | TACSFON FUTA Resource Hub</title>
+    <link rel="stylesheet" href="../public/css/style.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css">
+</head>
+<body>
+
+<header>
+    <div class="logo-container">
+        <img src="../public/images/logo.png" alt="TACSFON Logo">
+    </div>
+    <div class="title">
+        <h1>Admin Panel</h1>
+        <h6>Manage resource requests from members</h6>
+    </div>
+    <nav>
+        <a href="index.html">Home</a>
+        <a href="dashboard.html">Dashboard</a>
+        <a href="#logout" id="logoutBtn">Logout</a>
+    </nav>
+</header>
+
+<section style="padding:40px 8%; background:#f5f8f5; min-height:calc(100vh - 110px);">
+    <div style="max-width:1000px; margin:0 auto;">
+        <h2 style="color:#00733e; margin-bottom:30px;">Member Resource Requests</h2>
+        
+        <div id="requestsList" style="background:white; border-radius:12px; overflow:hidden;">
+            <p style="padding:20px; color:#666;">Loading requests...</p>
+        </div>
+    </div>
+</section>
+
+<footer style="background:#00733e; color:white; text-align:center; padding:20px; margin-top:40px;">
+    <p>© 2026 TACSFON FUTA Chapter | God's Own Family</p>
+</footer>
+
+<script src="/public/js/requests.js"></script>
+</body>
+</html>

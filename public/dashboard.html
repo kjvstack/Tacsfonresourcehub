@@ -1,0 +1,73 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Dashboard | TACSFON FUTA Resource Hub</title>
+
+    <link rel="stylesheet" href="../public/css/style.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css">
+</head>
+<body>
+
+<header>
+    <div class="logo-container">
+        <img src="../public/images/logo.png" alt="TACSFON Logo">
+    </div>
+    <div class="title">
+        <h1>Admin Dashboard</h1>
+        <h6>Upload fellowship resources and manage content</h6>
+    </div>
+    <nav>
+        <a href="index.html">Home</a>
+        <a href="requests.html">View Requests</a>
+        <a href="/logout">Logout</a>
+    </nav>
+</header>
+
+<section class="dashboard-section" style="padding:40px 8%; background:#f5f8f5; min-height:calc(100vh - 110px);">
+    <div class="dashboard-container" style="max-width:900px; margin:0 auto; background:white; padding:30px; border-radius:16px; box-shadow:0 8px 30px rgba(0,0,0,.08);">
+        <div class="dashboard-header" style="display:flex; flex-wrap:wrap; justify-content:space-between; align-items:center; gap:16px; margin-bottom:24px;">
+            <div>
+                <h2 style="margin:0; color:#00733e;">Upload Resource</h2>
+                <p style="margin:6px 0 0; color:#555;">Add new documents, sermon notes, past questions, and fellowship files.</p>
+            </div>
+            <a href="index.html" class="btn-secondary" style="padding:12px 20px; border-radius:8px; text-decoration:none;">View Site</a>
+        </div>
+
+        <div id="requestUploadMessage" style="margin-bottom:20px; color:#00733e; font-weight:600;"></div>
+
+        <form id="uploadForm" method="post" action="/upload" enctype="multipart/form-data">
+    <input type="hidden" name="requestId" id="requestId" value="">
+
+    <input type="text" name="title" placeholder="Enter title" required>
+
+    <select name="category" required>
+        <option value="">Select category</option>
+        <option value="past-questions">Past Questions</option>
+        <option value="sermon-notes">Sermon Notes</option>
+        <option value="hymns-songs">Hymns & Songs</option>
+        <option value="announcements">Announcements</option>
+        <option value="bible-study">Bible Study</option>
+        <option value="general-files">General Files</option>
+    </select>
+
+    <textarea name="description" placeholder="Description"></textarea>
+
+    <input type="file" name="resourceFile" required>
+
+    <button type="submit">Upload Resource</button>
+
+</form>
+        <div class="upload-preview" style="margin-top:32px;">
+            <h3 style="margin-bottom:14px; color:#00733e;">Recent Uploads</h3>
+            <div id="uploadList" style="display:grid; gap:14px;">
+                <!-- Recent uploads are loaded here -->
+            </div>
+        </div>
+    </div>
+</section>
+
+<script src="/public/js/dashboard.js"></script>
+</body>
+</html>

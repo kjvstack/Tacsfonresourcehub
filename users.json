@@ -1,0 +1,42 @@
+[
+  {
+    "id": 1717862513000,
+    "fullname": "John Doe",
+    "email": "john@example.com",
+    "matric": "CSC/25/001",
+    "department": "Computer Science",
+    "level": "200 Level",
+    "role": "Executive",
+    "password": "Test1234"
+  },
+  {
+    "id": 1717862513001,
+    "fullname": "Jane Smith",
+    "email": "jane@example.com",
+    "matric": "CSC/25/002",
+    "department": "Computer Science",
+    "level": "300 Level",
+    "role": "Member",
+    "password": "Test1234"
+  },
+  {
+    "id": 1780929257197,
+    "fullname": "Kayode Joshua",
+    "email": "joshuakayode134@gmail.com",
+    "matric": "IFT/25/7395",
+    "department": "IFT",
+    "level": "200 Level",
+    "role": "Member",
+    "password": "KJV2004"
+  },
+  {
+    "id": 1780929315522,
+    "fullname": "Kayode Joshua V",
+    "email": "timothyprecious419@gmail.com",
+    "matric": "IFT/25/7395",
+    "department": "CSC",
+    "level": "300 Level",
+    "role": "Executive",
+    "password": "1234567"
+  }
+]

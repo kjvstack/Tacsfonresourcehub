@@ -1,0 +1,197 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>TACSFON FUTA Resource Hub</title>
+
+    <link rel="stylesheet" href="../public/css/style.css">
+
+    <link rel="stylesheet"
+    href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css">
+</head>
+<body>
+
+    <header>
+        <div class="logo-container">
+            <img src="../public/images/logo.png" alt="TACSFON Logo">
+        </div>
+        <div class="title">
+            <h1>THE APOSTOLIC CHURCH STUDENT FELLOWSHIP OF NIGERIA (TACSFON)</h1>
+            <h2>FUTA Chapter</h2>
+            <h6> <i> .....let no man despise thy youth. 1 Timothy 4:12</i></h6>
+        </div>
+        <nav class="main-nav">
+            <button class="menu-toggle" aria-label="Toggle navigation">
+                <i class="fas fa-bars"></i>
+            </button>
+            <div class="nav-links">
+                <a href="#">Home</a>
+                <a href="#categories">Resources</a>
+                <a href="#latest">Latest Uploads</a>
+                <a href="#">Announcements</a>
+            </div>
+            <div class="auth-buttons">
+                <a href="login.html" class="login-btn">Login</a>
+                <a href="register.html" class="register-btn">Register</a>
+            </div>
+        </nav>
+    </header>
+
+    <div class="scroll-alert">
+        <p class="scroll-alert__text">Attention!!! All Executive please click the Register button to gain upload access and contribute fellowship resources.</p>
+    </div>
+
+    <section class="hero">
+
+        <div class="hero-content">
+
+            <h1>TACSFON FUTA Resource Hub</h1>
+
+            <p>
+                Access fellowship materials, past questions,
+                announcements, discipleship resources, and
+                important documents anytime, anywhere.
+            </p>
+            
+
+        </div>
+
+    </section>
+
+    <section class="categories" id="categories">
+
+    <h2>Resource Categories</h2>
+
+    <div class="category-grid">
+
+        <div class="category-card">
+            <i class="fas fa-file-alt"></i>
+            <h3>Past Questions</h3>
+            <p>Academic and fellowship examination materials.</p>
+        </div>
+
+        <div class="category-card">
+            <i class="fas fa-book-open"></i>
+            <h3>Sermon Notes</h3>
+            <p>Messages and teachings from fellowship meetings.</p>
+        </div>
+
+        <div class="category-card">
+            <i class="fas fa-music"></i>
+            <h3>Hymns & Songs</h3>
+            <p>Choir and worship resources.</p>
+        </div>
+
+        <div class="category-card">
+            <i class="fas fa-bullhorn"></i>
+            <h3>Announcements</h3>
+            <p>Important fellowship notices and updates.</p>
+        </div>
+
+        <div class="category-card">
+            <i class="fas fa-book-bible"></i>
+            <h3>Bible Study</h3>
+            <p>Study guides and discipleship materials.</p>
+        </div>
+
+        <div class="category-card">
+            <i class="fas fa-folder"></i>
+            <h3>General Files</h3>
+            <p>Other useful fellowship documents.</p>
+        </div>
+
+    </div>
+
+</section>
+
+<section class="latest-uploads" id="latest">
+
+    <h2>Latest Uploads</h2>
+
+    <div class="upload-list" id="uploadList">
+        <!-- Dynamic uploads loaded here -->
+    </div>
+
+</section>
+
+<section class="features">
+
+    <h2>Request a Resource</h2>
+
+    <div style="max-width:600px; margin:0 auto; background:white; padding:30px; border-radius:15px; box-shadow:0 4px 15px rgba(0,0,0,0.08);">
+        <p style="margin-bottom:20px; color:#555;">Don't see what you need? Request a resource below and our admins will work on it.</p>
+        <form id="requestForm">
+            <div style="margin-bottom:15px;">
+                <label style="display:block; margin-bottom:6px; font-weight:600;">Resource Name</label>
+                <input type="text" name="resourceName" placeholder="e.g., Advanced SQL Notes" required style="width:100%; padding:10px; border:1px solid #ddd; border-radius:8px;">
+            </div>
+            <div style="margin-bottom:15px;">
+                <label style="display:block; margin-bottom:6px; font-weight:600;">Category</label>
+                <select name="category" required style="width:100%; padding:10px; border:1px solid #ddd; border-radius:8px;">
+                    <option value="">Select category</option>
+                    <option value="past-questions">Past Questions</option>
+                    <option value="sermon-notes">Sermon Notes</option>
+                    <option value="hymns-songs">Hymns & Songs</option>
+                    <option value="announcements">Announcements</option>
+                    <option value="bible-study">Bible Study</option>
+                    <option value="general-files">General Files</option>
+                </select>
+            </div>
+            <div style="margin-bottom:20px;">
+                <label style="display:block; margin-bottom:6px; font-weight:600;">Description</label>
+                <textarea name="description" placeholder="Tell us why you need this resource" style="width:100%; padding:10px; border:1px solid #ddd; border-radius:8px; min-height:100px;"></textarea>
+            </div>
+            <button type="submit" style="padding:12px 24px; background:#00733e; color:white; border:none; border-radius:8px; font-weight:600; cursor:pointer;">Submit Request</button>
+        </form>
+        <div id="requestStatus" style="margin-top:15px;"></div>
+    </div>
+
+</section>
+
+    <section class="features">
+
+        <h2>What You Can Do</h2>
+
+        <div class="feature-grid">
+
+            <!-- 
+            <div class="card">
+                <i class="fas fa-file-upload"></i>
+                <h3>Upload Files</h3>
+                <p>Share fellowship resources with members.</p>
+            </div>
+        -->
+
+            <div class="card">
+                <i class="fas fa-download"></i>
+                <h3>Download Materials</h3>
+                <p>Get access to notes and past questions.</p>
+            </div>
+
+            <div class="card">
+                <i class="fas fa-bullhorn"></i>
+                <h3>View Announcements</h3>
+                <p>Stay informed about fellowship activities.</p>
+            </div>
+
+            <div class="card">
+                <i class="fas fa-book-bible"></i>
+                <h3>Request Resources</h3>
+                <p>Request specific materials you need for discipleship and spiritual growth.</p>
+            </div>
+
+        </div>
+
+    </section>
+
+    <footer>
+        <p>
+            © 2026 TACSFON FUTA Chapter |
+            God's Own Family
+        </p>
+    </footer>
+
+    <script src="/public/js/index.js"></script>
+</body>
+</html>
