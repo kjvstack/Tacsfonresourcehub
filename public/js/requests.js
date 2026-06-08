@@ -72,8 +72,7 @@ document.addEventListener('DOMContentLoaded', () => {
     if (logoutBtn) {
         logoutBtn.addEventListener('click', (e) => {
             e.preventDefault();
-            const sid = new URLSearchParams(window.location.search).get('sid');
-            window.location.href = `/logout?sid=${sid}`;
+            window.location.href = `/logout`;
         });
     }
 });
