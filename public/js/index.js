@@ -39,10 +39,18 @@ document.addEventListener('DOMContentLoaded', () => {
 
     const menuToggle = document.querySelector('.menu-toggle');
     const mainNav = document.querySelector('.main-nav');
+    
+    console.log('Menu toggle element:', menuToggle);
+    console.log('Main nav element:', mainNav);
+    
     if (menuToggle && mainNav) {
         menuToggle.addEventListener('click', () => {
+            console.log('Menu toggle clicked!');
             mainNav.classList.toggle('open');
+            console.log('Toggled open class. Current classes:', mainNav.className);
         });
+    } else {
+        console.warn('Menu toggle or main nav not found!');
     }
 
     const form = document.getElementById('requestForm');

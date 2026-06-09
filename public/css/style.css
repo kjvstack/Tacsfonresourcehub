@@ -103,6 +103,8 @@ nav a:hover{
     padding:10px 14px;
     border-radius:10px;
     transition:transform .25s ease, background .25s ease, box-shadow .25s ease, color .25s ease;
+    pointer-events:auto;
+    z-index:1001;
 }
 
 .menu-toggle:hover{
