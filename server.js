@@ -108,63 +108,44 @@ app.post("/register", async (req, res) => {
     }
 
 });
+console.log("REGISTER HIT");
+console.log(req.body);
 
 /* ---------------- LOGIN ---------------- */
 
 app.post("/login", async (req, res) => {
-
     try {
+        console.log("LOGIN BODY:", req.body);
 
         const { email, password } = req.body;
 
-        const user = await User.findOne({
-            email: email.toLowerCase()
-        });
+        const user = await User.findOne({ email: email.toLowerCase() });
+
+        console.log("USER FOUND:", user);
 
         if (!user) {
-            return res.send("Invalid login");
+            return res.send("User not found");
         }
 
-        const match = await bcrypt.compare(
-            password,
-            user.password
-        );
+        const match = await bcrypt.compare(password, user.password);
+
+        console.log("PASSWORD MATCH:", match);
 
         if (!match) {
-            return res.send("Invalid login");
+            return res.send("Wrong password");
         }
 
-        const token = jwt.sign({
+        res.send("Login success");
 
-            id: user._id,
-            fullname: user.fullname,
-            role: user.role
-
-        },
-        process.env.JWT_SECRET,
-        {
-            expiresIn: "2h"
-        });
-
-        res.cookie("token", token, {
-            httpOnly: true,
-            maxAge: 7200000
-        });
-
-        if (user.role === "Executive") {
-            return res.redirect("/dashboard.html");
-        }
-
-        return res.redirect("/index.html");
-
-    } catch (error) {
-
-        console.log(error);
-        res.status(500).send("Login failed");
-
+    } catch (err) {
+        console.log("LOGIN ERROR:", err);
+        res.status(500).send("Server error");
     }
-
 });
+
+
+console.log("LOGIN HIT");
+console.log(req.body);
 
 /* ---------------- LOGOUT ---------------- */
 
