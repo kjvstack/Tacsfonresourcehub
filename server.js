@@ -108,8 +108,8 @@ app.post("/register", async (req, res) => {
     }
 
 });
-console.log("REGISTER HIT");
-console.log(req.body);
+
+
 
 /* ---------------- LOGIN ---------------- */
 
@@ -143,9 +143,6 @@ app.post("/login", async (req, res) => {
     }
 });
 
-
-console.log("LOGIN HIT");
-console.log(req.body);
 
 /* ---------------- LOGOUT ---------------- */
 
