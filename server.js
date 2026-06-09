@@ -12,7 +12,7 @@ const { CloudinaryStorage } = require("multer-storage-cloudinary");
 
 const path = require("path");
 
-const User = require("./models/User");
+const User = require("./models/user");
 const Upload = require("./models/Upload");
 const Request = require("./models/Request");
 
