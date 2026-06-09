@@ -1,8 +1,38 @@
+const mongoose = require("mongoose");
+
+mongoose.connect(process.env.MONGO_URL || "mongodb+srv://tacsfonresourcehub:Vbf1LHxqKdsj7Kcr@cluster0.if6852u.mongodb.net/?appName=Cluster0" , {
+    useNewUrlParser: true,
+    useUnifiedTopology: true
+}).then(() => {
+    console.log("MongoDB connected ✅");
+}).catch(err => {
+    console.log("MongoDB connection error ❌", err);
+});
+
+const bcrypt = require("bcrypt");
+
+const jwt = require("jsonwebtoken");
+const cookieParser = require("cookie-parser");
+
+app.use(cookieParser());
+
+const JWT_SECRET = "tacsfon_secret_key_2026_change_this";
+
+require("dotenv").config();
+
+const cloudinary = require("cloudinary").v2;
+const { CloudinaryStorage } = require("multer-storage-cloudinary");
+
+cloudinary.config({
+  cloud_name: process.env.CLOUDINARY_CLOUD_NAME,
+  api_key: process.env.CLOUDINARY_API_KEY,
+  api_secret: process.env.CLOUDINARY_API_SECRET,
+});
+
 const express = require("express");
 const multer = require("multer");
 const path = require("path");
 const fs = require("fs");
-const bcrypt = require("bcrypt");
 const cookieParser = require("cookie-parser");
 
 const app = express();
@@ -43,13 +73,22 @@ function verifySession(req, res, next) {
 }
 
 function onlyExecutive(req, res, next) {
-  if (!req.user) {
-    return res.redirect("/login.html");
-  }
-  if (req.user.role !== "Executive") {
-    return res.status(403).send("Access denied");
-  }
-  next();
+    const token = req.cookies.token;
+
+    if (!token) return res.redirect("/login.html");
+
+    try {
+        const user = jwt.verify(token, JWT_SECRET);
+
+        if (user.role !== "Executive") {
+            return res.send("Access denied ❌");
+        }
+
+        req.user = user;
+        next();
+    } catch (err) {
+        return res.redirect("/login.html");
+    }
 }
 
 ensureFile(usersFile, []);
@@ -58,9 +97,12 @@ if (!fs.existsSync(uploadDir)) {
   fs.mkdirSync(uploadDir, { recursive: true });
 }
 
-const storage = multer.diskStorage({
-  destination: (req, file, cb) => cb(null, uploadDir),
-  filename: (req, file, cb) => cb(null, `${Date.now()}-${file.originalname}`),
+const storage = new CloudinaryStorage({
+  cloudinary: cloudinary,
+  params: {
+    folder: "tacsfon-resources",
+    resource_type: "auto"
+  }
 });
 
 const upload = multer({ storage });
@@ -72,104 +114,107 @@ app.use('/public', express.static(path.join(__dirname, 'public')));
 app.use(['/dashboard.html', '/requests.html'], verifySession, onlyExecutive);
 app.use(express.static(path.join(__dirname, 'public')));
 
-app.post('/register', async (req, res) => {
-  const { fullname, email, matric, department, level, role, password, confirmPassword } = req.body;
-  if (!fullname || !email || !password || !confirmPassword || !role) {
-    return res.send('Please fill in all required fields. <a href="/register.html">Go back</a>');
-  }
-  if (password !== confirmPassword) {
-    return res.send('Passwords do not match. <a href="/register.html">Go back</a>');
-  }
-
-  const cleanEmail = email.trim().toLowerCase();
-  const users = loadJson(usersFile, []);
-  if (users.find(u => u.email === cleanEmail)) {
-    return res.send('User already exists. <a href="/register.html">Go back</a>');
-  }
-
-  const hashedPassword = await bcrypt.hash(password, 10);
-  users.push({
-    id: Date.now(),
-    fullname,
-    email: cleanEmail,
-    matric,
-    department,
-    level,
-    role,
-    password: hashedPassword
-  });
-  saveJson(usersFile, users);
-
-  return res.send(`
-    <h2>Registration Successful</h2>
-    <p>Your account was created successfully.</p>
-    <a href="/login.html">Login</a>
-  `);
+app.get("/dashboard.html", verifyToken, (req, res) => {
+    res.sendFile(path.join(__dirname, "public", "dashboard.html"));
 });
 
-app.post('/login', async (req, res) => {
-  const { email, password } = req.body;
-  if (!email || !password) {
-    return res.send('Both email and password are required. <a href="/login.html">Go back</a>');
-  }
+//Register Route
+app.post("/register", async (req, res) => {
+    const { fullname, email, matric, department, level, role, password, confirmPassword } = req.body;
 
-  const cleanEmail = email.trim().toLowerCase();
-  const users = loadJson(usersFile, []);
-  const user = users.find(u => u.email === cleanEmail);
-  if (!user) {
-    return res.send('Invalid login credentials. <a href="/login.html">Try again</a>');
-  }
+    if (password !== confirmPassword) {
+        return res.send("Passwords do not match");
+    }
 
-  const isHashedPassword = typeof user.password === 'string' && user.password.startsWith('$2');
-  const passwordMatches = isHashedPassword
-    ? await bcrypt.compare(password, user.password)
-    : user.password === password;
+    const cleanEmail = email.trim().toLowerCase();
 
-  if (!passwordMatches) {
-    return res.send('Invalid login credentials. <a href="/login.html">Try again</a>');
-  }
+    // check if exists
+    const exists = await User.findOne({ email: cleanEmail });
+    if (exists) {
+        return res.send("User already exists");
+    }
 
-  if (!isHashedPassword) {
-    user.password = await bcrypt.hash(password, 10);
-    saveJson(usersFile, users);
-  }
+    const hashedPassword = await bcrypt.hash(password, 10);
 
-  const sessionId = Date.now().toString();
-  sessions[sessionId] = {
-    id: user.id,
-    fullname: user.fullname,
-    email: user.email,
-    role: user.role
-  };
-  res.cookie('sessionId', sessionId, { httpOnly: true, maxAge: 2 * 60 * 60 * 1000 });
+    const newUser = new User({
+        fullname,
+        email: cleanEmail,
+        matric,
+        department,
+        level,
+        role,
+        password: hashedPassword
+    });
 
-  if (user.role === 'Executive') {
-    return res.redirect('/dashboard.html');
-  }
-  return res.redirect('/index.html');
+    await newUser.save();
+
+    res.send(`
+        <h2>Registration Successful ✅</h2>
+        <a href="/login.html">Login</a>
+    `);
 });
 
-app.get('/logout', (req, res) => {
-  const sessionId = req.cookies?.sessionId;
-  if (sessionId) {
-    delete sessions[sessionId];
-  }
-  res.clearCookie('sessionId');
-  return res.redirect('/login.html');
+//Login Route
+app.post("/login", async (req, res) => {
+    const { email, password } = req.body;
+
+    const cleanEmail = email.trim().toLowerCase();
+
+    const user = await User.findOne({ email: cleanEmail });
+
+    if (!user) {
+        return res.send("Invalid login");
+    }
+
+    const isMatch = await bcrypt.compare(password, user.password);
+
+    if (!isMatch) {
+        return res.send("Invalid login");
+    }
+
+    const token = jwt.sign(
+        {
+            id: user._id,
+            email: user.email,
+            role: user.role,
+            fullname: user.fullname
+        },
+        JWT_SECRET,
+        { expiresIn: "2h" }
+    );
+
+    res.cookie("token", token, {
+        httpOnly: true,
+        maxAge: 2 * 60 * 60 * 1000
+    });
+
+    if (user.role === "Executive") {
+        return res.redirect("/dashboard.html");
+    }
+
+    return res.redirect("/index.html");
 });
 
-app.post('/upload', verifySession, onlyExecutive, upload.single('resourceFile'), (req, res) => {
-  if (!req.file) {
-    return res.status(400).send('No file uploaded. <a href="/dashboard.html">Go back</a>');
-  }
+//Logout Route
+app.get("/logout", (req, res) => {
+    res.clearCookie("token");
+    res.redirect("/login.html");
+});
 
-  const fileUrl = `/files/${encodeURIComponent(req.file.filename)}`;
-  return res.send(`
-    <h2>Upload Successful ?</h2>
-    <p><b>File:</b> ${req.file.originalname}</p>
-    <a href="${fileUrl}" target="_blank">View File</a><br><br>
-    <a href="/dashboard.html">Go Back</a>
-  `);
+//Upload Route
+app.post("/upload", onlyExecutive, upload.single("resourceFile"), (req, res) => {
+
+    const fileUrl = req.file.path;
+
+    console.log("Uploaded to Cloudinary:");
+    console.log(fileUrl);
+
+    res.send(`
+        <h2>Upload Successful ✅</h2>
+        <a href="${fileUrl}" target="_blank">View File</a>
+        <br><br>
+        <a href="/dashboard.html">Go Back</a>
+    `);
 });
 
 app.get('/api/uploads', (req, res) => {
