@@ -120,34 +120,55 @@ app.post("/register", async (req, res) => {
 
 app.post("/login", async (req, res) => {
     try {
-        console.log("LOGIN BODY:", req.body);
-
         const { email, password } = req.body;
 
-        const user = await User.findOne({ email: email.toLowerCase() });
-
-        console.log("USER FOUND:", user);
+        const user = await User.findOne({
+            email: email.toLowerCase()
+        });
 
         if (!user) {
             return res.send("User not found");
         }
 
-        const match = await bcrypt.compare(password, user.password);
-
-        console.log("PASSWORD MATCH:", match);
+        const match = await bcrypt.compare(
+            password,
+            user.password
+        );
 
         if (!match) {
             return res.send("Wrong password");
         }
 
-        res.send("Login success");
+        // Create JWT Token
+        const token = jwt.sign(
+            {
+                id: user._id,
+                fullname: user.fullname,
+                email: user.email,
+                role: user.role
+            },
+            process.env.JWT_SECRET,
+            { expiresIn: "2h" }
+        );
+
+        // Save token in cookie
+        res.cookie("token", token, {
+            httpOnly: true,
+            maxAge: 2 * 60 * 60 * 1000
+        });
+
+        // Redirect based on role
+        if (user.role === "Executive") {
+            return res.redirect("/dashboard.html");
+        }
+
+        return res.redirect("/index.html");
 
     } catch (err) {
         console.log("LOGIN ERROR:", err);
         res.status(500).send("Server error");
     }
 });
-
 
 /* ---------------- LOGOUT ---------------- */
 
