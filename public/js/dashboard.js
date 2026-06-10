@@ -13,11 +13,12 @@ async function loadUploads() {
         items.forEach(it => {
             const div = document.createElement('div');
             div.className = 'upload-card';
-            const date = new Date(it.uploadedAt).toLocaleString();
+            const date = new Date(it.createdAt).toLocaleString();
             div.innerHTML = `
-                <strong>${escapeHtml(it.originalName)}</strong>
-                <p style="margin:8px 0 10px; color:#555;">Uploaded: ${date}</p>
-                <a class="download-btn" href="/files/${encodeURIComponent(it.filename)}">Download</a>
+                <strong>${escapeHtml(it.title)}</strong>
+                <p style="margin:8px 0 5px; color:#555; font-size:0.9em;"><strong>Description:</strong> ${escapeHtml(it.description || 'N/A')}</p>
+                <p style="margin:5px 0 10px; color:#777; font-size:0.85em;">Uploaded: ${date}</p>
+                <a class="download-btn" href="/download/${it._id}">Download</a>
             `;
             list.appendChild(div);
         });

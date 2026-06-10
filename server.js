@@ -235,6 +235,35 @@ app.get("/api/uploads", async (req, res) => {
 
 });
 
+/* ---------------- DOWNLOAD FILE ---------------- */
+
+app.get("/download/:id", async (req, res) => {
+
+    try {
+
+        const file = await Upload.findById(req.params.id);
+
+        if (!file) {
+            return res.status(404).send("File not found");
+        }
+
+        // Increment download counter
+        await Upload.findByIdAndUpdate(req.params.id, {
+            $inc: { downloads: 1 }
+        });
+
+        // Redirect to Cloudinary file URL
+        res.redirect(file.fileUrl);
+
+    } catch (error) {
+
+        console.log(error);
+        res.status(500).send("Download failed");
+
+    }
+
+});
+
 /* ---------------- RESOURCE REQUEST ---------------- */
 
 app.post(
