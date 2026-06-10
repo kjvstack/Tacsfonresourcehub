@@ -198,10 +198,9 @@ app.post(
                 category: req.body.category,
                 description: req.body.description,
 
+                originalName: req.file.originalname,
                 fileUrl: req.file.path,
-
                 cloudinaryId: req.file.filename,
-
                 mimeType: req.file.mimetype,
 
                 uploadedBy: req.user.fullname
@@ -254,13 +253,14 @@ app.get("/download/:id", async (req, res) => {
             $inc: { downloads: 1 }
         });
 
-        // Set proper content-type header if available
-        if (file.mimeType) {
-            res.setHeader('Content-Type', file.mimeType);
-        }
+        const downloadName = file.originalName || `${file.title || 'download'}`;
+        const downloadUrl = cloudinary.url(file.cloudinaryId, {
+            resource_type: 'auto',
+            flags: 'attachment',
+            attachment: downloadName
+        });
 
-        // Redirect to Cloudinary file URL with proper file format
-        res.redirect(file.fileUrl);
+        res.redirect(downloadUrl);
 
     } catch (error) {
 

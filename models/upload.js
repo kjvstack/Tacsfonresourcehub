@@ -8,6 +8,8 @@ const uploadSchema = new mongoose.Schema({
 
     description: String,
 
+    originalName: String,
+
     fileUrl: String,
 
     cloudinaryId: String,
