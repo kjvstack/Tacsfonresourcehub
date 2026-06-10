@@ -13,17 +13,20 @@ async function loadUploads() {
         items.forEach(it => {
             const div = document.createElement('div');
             div.className = 'upload-item';
-            const date = new Date(it.uploadedAt).toLocaleDateString('en-US', { 
+            const date = new Date(it.createdAt).toLocaleDateString('en-US', { 
                 month: 'short', 
                 day: 'numeric', 
                 year: 'numeric' 
             });
+            const fileType = it.mimeType ? it.mimeType.split('/')[1].toUpperCase() : 'FILE';
             div.innerHTML = `
                 <div>
-                    <h3>${escapeHtml(it.originalName)}</h3>
-                    <small>Uploaded ${date}</small>
+                    <h3>${escapeHtml(it.title)}</h3>
+                    <p style="margin:5px 0; color:#666; font-size:0.9em;"><strong>Category:</strong> ${escapeHtml(it.category || 'N/A').replace(/-/g, ' ')}</p>
+                    <p style="margin:5px 0; color:#666; font-size:0.9em;"><strong>Description:</strong> ${escapeHtml(it.description || 'N/A')}</p>
+                    <small style="color:#999;">Uploaded ${date} • ${fileType}</small>
                 </div>
-                <a href="/files/${encodeURIComponent(it.filename)}" class="download-btn">Download</a>
+                <a href="/download/${it._id}" class="download-btn">Download</a>
             `;
             list.appendChild(div);
         });

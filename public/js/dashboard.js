@@ -14,10 +14,12 @@ async function loadUploads() {
             const div = document.createElement('div');
             div.className = 'upload-card';
             const date = new Date(it.createdAt).toLocaleString();
+            const fileType = it.mimeType ? it.mimeType.split('/')[1].toUpperCase() : 'FILE';
             div.innerHTML = `
                 <strong>${escapeHtml(it.title)}</strong>
-                <p style="margin:8px 0 5px; color:#555; font-size:0.9em;"><strong>Description:</strong> ${escapeHtml(it.description || 'N/A')}</p>
-                <p style="margin:5px 0 10px; color:#777; font-size:0.85em;">Uploaded: ${date}</p>
+                <p style="margin:8px 0 5px; color:#555; font-size:0.9em;"><strong>Category:</strong> ${escapeHtml(it.category || 'N/A').replace(/-/g, ' ')}</p>
+                <p style="margin:5px 0 5px; color:#555; font-size:0.9em;"><strong>Description:</strong> ${escapeHtml(it.description || 'N/A')}</p>
+                <p style="margin:5px 0 10px; color:#777; font-size:0.85em;">Uploaded: ${date} • ${fileType}</p>
                 <a class="download-btn" href="/download/${it._id}">Download</a>
             `;
             list.appendChild(div);

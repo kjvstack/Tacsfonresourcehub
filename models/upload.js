@@ -12,6 +12,8 @@ const uploadSchema = new mongoose.Schema({
 
     cloudinaryId: String,
 
+    mimeType: String,
+
     uploadedBy: String,
 
     downloads: {
