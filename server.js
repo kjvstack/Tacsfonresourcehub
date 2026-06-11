@@ -57,32 +57,43 @@ const upload = multer({ storage });
 
 const MAX_DOWNLOAD_REDIRECTS = 5;
 
-function streamCloudinaryFile(sourceUrl, res, downloadName, mimeType, redirectCount = 0) {
+function buildCloudinaryUrl(publicId, resourceType) {
+    return cloudinary.url(publicId, {
+        resource_type: resourceType,
+        type: 'upload',
+        secure: true
+    });
+}
+
+async function streamCloudinaryFile(urls, res, downloadName, mimeType, redirectCount = 0) {
+    if (!urls.length) {
+        return res.status(502).send("Failed to retrieve file from storage");
+    }
+
     if (redirectCount >= MAX_DOWNLOAD_REDIRECTS) {
         return res.status(508).send("Too many redirects while downloading file");
     }
 
+    const sourceUrl = urls.shift();
     const parsedUrl = new URL(sourceUrl);
     const client = parsedUrl.protocol === 'https:' ? https : http;
 
     client.get(sourceUrl, remoteRes => {
         if (remoteRes.statusCode >= 300 && remoteRes.statusCode < 400 && remoteRes.headers.location) {
-            return streamCloudinaryFile(remoteRes.headers.location, res, downloadName, mimeType, redirectCount + 1);
+            return streamCloudinaryFile([remoteRes.headers.location, ...urls], res, downloadName, mimeType, redirectCount + 1);
         }
 
         if (remoteRes.statusCode !== 200) {
-            console.error('Cloudinary download error', remoteRes.statusCode, remoteRes.statusMessage);
-            return res.status(502).send("Failed to retrieve file from storage");
+            console.warn('Cloudinary download attempt failed', sourceUrl, remoteRes.statusCode, remoteRes.statusMessage);
+            return streamCloudinaryFile(urls, res, downloadName, mimeType, redirectCount + 1);
         }
 
         res.setHeader('Content-Type', mimeType || remoteRes.headers['content-type'] || 'application/octet-stream');
         res.setHeader('Content-Disposition', `attachment; filename="${downloadName}"`);
         remoteRes.pipe(res);
     }).on('error', err => {
-        console.error('Download stream error:', err);
-        if (!res.headersSent) {
-            res.status(500).send("Download failed");
-        }
+        console.warn('Download stream error for', sourceUrl, err.message);
+        streamCloudinaryFile(urls, res, downloadName, mimeType, redirectCount + 1);
     });
 }
 
