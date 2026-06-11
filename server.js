@@ -289,17 +289,23 @@ app.get("/download/:id", async (req, res) => {
         });
 
         const downloadName = file.originalName || `${file.title || 'download'}`;
-        const resourceType = file.mimeType && !/^image\//i.test(file.mimeType) && !/^video\//i.test(file.mimeType)
-            ? 'raw'
-            : 'auto';
+        let sourceUrl = null;
 
-        const sourceUrl = file.cloudinaryId
-            ? cloudinary.url(file.cloudinaryId, {
-                resource_type: resourceType,
-                type: 'upload',
-                secure: true
-            })
-            : file.fileUrl;
+        if (file.cloudinaryId) {
+            try {
+                const resource = await cloudinary.api.resource(file.cloudinaryId, {
+                    resource_type: 'auto',
+                    type: 'upload'
+                });
+                sourceUrl = resource.secure_url;
+            } catch (cloudErr) {
+                console.error('Cloudinary resource lookup failed:', cloudErr);
+            }
+        }
+
+        if (!sourceUrl && file.fileUrl && /^https?:\/\//i.test(file.fileUrl)) {
+            sourceUrl = file.fileUrl;
+        }
 
         if (!sourceUrl) {
             return res.status(404).send("Download URL not found");
