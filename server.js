@@ -292,22 +292,38 @@ app.get("/download/:id", async (req, res) => {
         let sourceUrl = null;
 
         if (file.cloudinaryId) {
+            // Try to resolve the real asset metadata from Cloudinary
             try {
                 const resource = await cloudinary.api.resource(file.cloudinaryId, {
                     resource_type: 'auto',
                     type: 'upload'
                 });
+                console.log('Cloudinary resource (auto) found for', file.cloudinaryId, resource.resource_type);
                 sourceUrl = resource.secure_url;
             } catch (cloudErr) {
-                console.warn('Cloudinary resource lookup (auto) failed, trying raw:', cloudErr && cloudErr.message);
+                console.warn('Cloudinary resource lookup (auto) failed:', cloudErr && cloudErr.message);
+                // Retry as raw (documents like pdf/docx/xls/xml are often stored as raw)
                 try {
                     const resourceRaw = await cloudinary.api.resource(file.cloudinaryId, {
                         resource_type: 'raw',
                         type: 'upload'
                     });
+                    console.log('Cloudinary resource (raw) found for', file.cloudinaryId);
                     sourceUrl = resourceRaw.secure_url;
                 } catch (rawErr) {
-                    console.error('Cloudinary resource lookup (raw) failed:', rawErr && rawErr.message);
+                    console.warn('Cloudinary resource lookup (raw) failed:', rawErr && rawErr.message);
+                    // Final fallback: generate a Cloudinary URL for raw resource and stream it.
+                    try {
+                        const generated = cloudinary.url(file.cloudinaryId, {
+                            resource_type: 'raw',
+                            type: 'upload',
+                            secure: true
+                        });
+                        console.log('Generated Cloudinary URL fallback for', file.cloudinaryId);
+                        sourceUrl = generated;
+                    } catch (genErr) {
+                        console.error('Failed to generate Cloudinary fallback URL:', genErr && genErr.message);
+                    }
                 }
             }
         }
