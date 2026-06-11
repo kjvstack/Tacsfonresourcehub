@@ -289,9 +289,14 @@ app.get("/download/:id", async (req, res) => {
         });
 
         const downloadName = file.originalName || `${file.title || 'download'}`;
+        const resourceType = file.mimeType && !/^image\//i.test(file.mimeType) && !/^video\//i.test(file.mimeType)
+            ? 'raw'
+            : 'auto';
+
         const sourceUrl = file.cloudinaryId
             ? cloudinary.url(file.cloudinaryId, {
-                resource_type: 'auto',
+                resource_type: resourceType,
+                type: 'upload',
                 secure: true
             })
             : file.fileUrl;
