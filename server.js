@@ -9,6 +9,8 @@ const cookieParser = require("cookie-parser");
 const multer = require("multer");
 const cloudinary = require("cloudinary").v2;
 const { CloudinaryStorage } = require("multer-storage-cloudinary");
+const https = require("https");
+const http = require("http");
 
 const path = require("path");
 
@@ -53,23 +55,35 @@ const storage = new CloudinaryStorage({
 
 const upload = multer({ storage });
 
-function getCloudinaryDownloadUrl(file) {
-    const downloadName = file.originalName || file.title || 'download';
+const MAX_DOWNLOAD_REDIRECTS = 5;
 
-    if (file.cloudinaryId && !/^https?:\/\//i.test(file.cloudinaryId)) {
-        return cloudinary.url(file.cloudinaryId, {
-            resource_type: 'auto',
-            secure: true,
-            flags: 'attachment',
-            attachment: downloadName
-        });
+function streamCloudinaryFile(sourceUrl, res, downloadName, mimeType, redirectCount = 0) {
+    if (redirectCount >= MAX_DOWNLOAD_REDIRECTS) {
+        return res.status(508).send("Too many redirects while downloading file");
     }
 
-    if (file.fileUrl && /^https?:\/\//i.test(file.fileUrl)) {
-        return file.fileUrl;
-    }
+    const parsedUrl = new URL(sourceUrl);
+    const client = parsedUrl.protocol === 'https:' ? https : http;
 
-    return null;
+    client.get(sourceUrl, remoteRes => {
+        if (remoteRes.statusCode >= 300 && remoteRes.statusCode < 400 && remoteRes.headers.location) {
+            return streamCloudinaryFile(remoteRes.headers.location, res, downloadName, mimeType, redirectCount + 1);
+        }
+
+        if (remoteRes.statusCode !== 200) {
+            console.error('Cloudinary download error', remoteRes.statusCode, remoteRes.statusMessage);
+            return res.status(502).send("Failed to retrieve file from storage");
+        }
+
+        res.setHeader('Content-Type', mimeType || remoteRes.headers['content-type'] || 'application/octet-stream');
+        res.setHeader('Content-Disposition', `attachment; filename="${downloadName}"`);
+        remoteRes.pipe(res);
+    }).on('error', err => {
+        console.error('Download stream error:', err);
+        if (!res.headersSent) {
+            res.status(500).send("Download failed");
+        }
+    });
 }
 
 /* ---------------- MIDDLEWARE ---------------- */
@@ -274,13 +288,19 @@ app.get("/download/:id", async (req, res) => {
             $inc: { downloads: 1 }
         });
 
-        const downloadUrl = getCloudinaryDownloadUrl(file);
+        const downloadName = file.originalName || `${file.title || 'download'}`;
+        const sourceUrl = file.cloudinaryId
+            ? cloudinary.url(file.cloudinaryId, {
+                resource_type: 'auto',
+                secure: true
+            })
+            : file.fileUrl;
 
-        if (!downloadUrl) {
+        if (!sourceUrl) {
             return res.status(404).send("Download URL not found");
         }
 
-        res.redirect(downloadUrl);
+        streamCloudinaryFile(sourceUrl, res, downloadName, file.mimeType);
 
     } catch (error) {
 
