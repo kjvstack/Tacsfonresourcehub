@@ -299,7 +299,16 @@ app.get("/download/:id", async (req, res) => {
                 });
                 sourceUrl = resource.secure_url;
             } catch (cloudErr) {
-                console.error('Cloudinary resource lookup failed:', cloudErr);
+                console.warn('Cloudinary resource lookup (auto) failed, trying raw:', cloudErr && cloudErr.message);
+                try {
+                    const resourceRaw = await cloudinary.api.resource(file.cloudinaryId, {
+                        resource_type: 'raw',
+                        type: 'upload'
+                    });
+                    sourceUrl = resourceRaw.secure_url;
+                } catch (rawErr) {
+                    console.error('Cloudinary resource lookup (raw) failed:', rawErr && rawErr.message);
+                }
             }
         }
 
