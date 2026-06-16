@@ -35,38 +35,14 @@ mongoose.connect(process.env.MONGO_URL)
     console.error(err);
 });
 
-/* ---------------- CLOUDINARY ---------------- */
-
-cloudinary.config({
-    cloud_name: process.env.CLOUDINARY_CLOUD_NAME,
-    api_key: process.env.CLOUDINARY_API_KEY,
-    api_secret: process.env.CLOUDINARY_API_SECRET
-});
-
-const storage = new CloudinaryStorage({
-    cloudinary,
-    params: {
-        folder: "tacsfon-resources",
-        resource_type: "auto",
-        use_filename: true,
-        unique_filename: true
-    }
-});
-
-const upload = multer({ storage });
-
-const MAX_DOWNLOAD_REDIRECTS = 5;
-
-function buildCloudinaryUrl(publicId, resourceType) {
-    return cloudinary.url(publicId, {
-        resource_type: resourceType,
-        type: 'upload',
-        secure: true
-    });
-}
-
-async function streamCloudinaryFile(urls, res, downloadName, mimeType, redirectCount = 0) {
-    if (!urls.length) {
+async function streamCloudinaryFile(
+    urls,
+    res,
+    downloadName,
+    mimeType,
+    redirectCount = 0
+) {
+    if (!urls || !urls.length) {
         return res.status(502).send("Failed to retrieve file from storage");
     }
 
@@ -74,32 +50,86 @@ async function streamCloudinaryFile(urls, res, downloadName, mimeType, redirectC
         return res.status(508).send("Too many redirects while downloading file");
     }
 
-   const sourceUrl = urls.shift();
+    const sourceUrl = urls.shift();
 
-if (!sourceUrl) {
-    return res.status(404).send("Download URL not found");
-}
+    if (!sourceUrl) {
+        return res.status(404).send("Download URL not found");
+    }
 
-const parsedUrl = new URL(sourceUrl);
-    const client = parsedUrl.protocol === 'https:' ? https : http;
+    try {
+        const parsedUrl = new URL(sourceUrl);
+        const client = parsedUrl.protocol === "https:" ? https : http;
 
-    client.get(sourceUrl, remoteRes => {
-        if (remoteRes.statusCode >= 300 && remoteRes.statusCode < 400 && remoteRes.headers.location) {
-            return streamCloudinaryFile([remoteRes.headers.location, ...urls], res, downloadName, mimeType, redirectCount + 1);
-        }
+        client.get(sourceUrl, (remoteRes) => {
+            // Handle redirects
+            if (
+                remoteRes.statusCode >= 300 &&
+                remoteRes.statusCode < 400 &&
+                remoteRes.headers.location
+            ) {
+                return streamCloudinaryFile(
+                    [remoteRes.headers.location, ...urls],
+                    res,
+                    downloadName,
+                    mimeType,
+                    redirectCount + 1
+                );
+            }
 
-        if (remoteRes.statusCode !== 200) {
-            console.warn('Cloudinary download attempt failed', sourceUrl, remoteRes.statusCode, remoteRes.statusMessage);
-            return streamCloudinaryFile(urls, res, downloadName, mimeType, redirectCount + 1);
-        }
+            // IMPORTANT FIX: log real error body if Cloudinary fails
+            if (remoteRes.statusCode !== 200) {
+                console.error(
+                    "Download failed:",
+                    sourceUrl,
+                    remoteRes.statusCode,
+                    remoteRes.statusMessage
+                );
 
-        res.setHeader('Content-Type', mimeType || remoteRes.headers['content-type'] || 'application/octet-stream');
-        res.setHeader('Content-Disposition', `attachment; filename="${downloadName}"`);
-        remoteRes.pipe(res);
-    }).on('error', err => {
-        console.warn('Download stream error for', sourceUrl, err.message);
-        streamCloudinaryFile(urls, res, downloadName, mimeType, redirectCount + 1);
-    });
+                // Try next URL if available
+                return streamCloudinaryFile(
+                    urls,
+                    res,
+                    downloadName,
+                    mimeType,
+                    redirectCount + 1
+                );
+            }
+
+            res.setHeader(
+                "Content-Type",
+                mimeType ||
+                    remoteRes.headers["content-type"] ||
+                    "application/octet-stream"
+            );
+
+            res.setHeader(
+                "Content-Disposition",
+                `attachment; filename="${downloadName}"`
+            );
+
+            remoteRes.pipe(res);
+        }).on("error", (err) => {
+            console.error("Stream error:", sourceUrl, err.message);
+
+            return streamCloudinaryFile(
+                urls,
+                res,
+                downloadName,
+                mimeType,
+                redirectCount + 1
+            );
+        });
+    } catch (err) {
+        console.error("Invalid URL:", sourceUrl, err.message);
+
+        return streamCloudinaryFile(
+            urls,
+            res,
+            downloadName,
+            mimeType,
+            redirectCount + 1
+        );
+    }
 }
 
 /* ---------------- MIDDLEWARE ---------------- */
@@ -240,52 +270,40 @@ app.post(
     upload.single("resourceFile"),
 
     async (req, res) => {
-
         try {
+            console.log(req.file);
 
             const newUpload = await Upload.create({
-
                 title: req.body.title,
                 category: req.body.category,
                 description: req.body.description,
 
                 originalName: req.file.originalname,
+
+                // Direct Cloudinary URL
                 fileUrl: req.file.path,
-                cloudinaryId: req.file.filename,
+
+                // Save the real public ID for future use
+                cloudinaryId: req.file.public_id || req.file.filename,
+
                 mimeType: req.file.mimetype,
 
                 uploadedBy: req.user.fullname
-
             });
 
             res.send(`
                 <h2>Upload Successful ✅</h2>
-                <a href="${newUpload.fileUrl}">
+                <a href="${newUpload.fileUrl}" target="_blank">
                     View File
                 </a>
             `);
 
         } catch (error) {
-
-            console.log(error);
+            console.error(error);
             res.status(500).send("Upload failed");
-
         }
-
     }
 );
-
-/* ---------------- GET UPLOADS ---------------- */
-
-app.get("/api/uploads", async (req, res) => {
-
-    const uploads = await Upload
-        .find()
-        .sort({ createdAt: -1 });
-
-    res.json(uploads);
-
-});
 
 /* ---------------- DOWNLOAD FILE ---------------- */
 
@@ -297,104 +315,14 @@ app.get("/download/:id", async (req, res) => {
             return res.status(404).send("File not found");
         }
 
-        // Increment download counter
         await Upload.findByIdAndUpdate(req.params.id, {
             $inc: { downloads: 1 }
         });
 
-        const downloadName =
-            file.originalName || file.title || "download";
-
-        let sourceUrl = null;
-
-        if (file.cloudinaryId) {
-            try {
-                const resource = await cloudinary.api.resource(
-                    file.cloudinaryId,
-                    {
-                        resource_type: "auto",
-                        type: "upload"
-                    }
-                );
-
-                console.log(
-                    "Cloudinary resource (auto) found:",
-                    file.cloudinaryId
-                );
-
-                sourceUrl = resource.secure_url;
-
-            } catch (cloudErr) {
-                console.warn(
-                    "Cloudinary resource lookup (auto) failed:",
-                    cloudErr.message
-                );
-
-                try {
-                    const resourceRaw = await cloudinary.api.resource(
-                        file.cloudinaryId,
-                        {
-                            resource_type: "raw",
-                            type: "upload"
-                        }
-                    );
-
-                    console.log(
-                        "Cloudinary resource (raw) found:",
-                        file.cloudinaryId
-                    );
-
-                    sourceUrl = resourceRaw.secure_url;
-
-                } catch (rawErr) {
-                    console.warn(
-                        "Cloudinary resource lookup (raw) failed:",
-                        rawErr.message
-                    );
-
-                    try {
-                        sourceUrl = cloudinary.url(file.cloudinaryId, {
-                            resource_type: "raw",
-                            type: "upload",
-                            secure: true
-                        });
-
-                        console.log(
-                            "Generated Cloudinary fallback URL:",
-                            sourceUrl
-                        );
-
-                    } catch (genErr) {
-                        console.error(
-                            "Failed to generate Cloudinary URL:",
-                            genErr.message
-                        );
-                    }
-                }
-            }
-        }
-
-        // Fallback to stored URL
-        if (!sourceUrl && file.fileUrl && /^https?:\/\//i.test(file.fileUrl)) {
-            sourceUrl = file.fileUrl;
-        }
-
-        if (!sourceUrl) {
-            return res.status(404).send("Download URL not found");
-        }
-
-        console.log("Downloading:", sourceUrl);
-
-        // IMPORTANT: pass an array, not a string
-        streamCloudinaryFile(
-            [sourceUrl],
-            res,
-            downloadName,
-            file.mimeType
-        );
+        return res.redirect(file.fileUrl); // SIMPLE + RELIABLE
 
     } catch (error) {
-        console.error("Download error:", error);
+        console.error(error);
         res.status(500).send("Download failed");
     }
 });
