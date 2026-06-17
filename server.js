@@ -35,6 +35,21 @@ mongoose.connect(process.env.MONGO_URL)
     console.error(err);
 });
 
+const multer = require("multer");
+const { CloudinaryStorage } = require("multer-storage-cloudinary");
+
+const storage = new CloudinaryStorage({
+    cloudinary,
+    params: {
+        folder: "tacsfon-resources",
+        resource_type: "auto",
+        use_filename: true,
+        unique_filename: true
+    }
+});
+
+const upload = multer({ storage });
+
 async function streamCloudinaryFile(
     urls,
     res,
